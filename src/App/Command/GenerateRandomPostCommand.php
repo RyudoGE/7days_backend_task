@@ -2,29 +2,24 @@
 
 namespace App\Command;
 
-use App\Entity\Post;
-use Doctrine\ORM\EntityManagerInterface;
-use joshtronic\LoremIpsum;
+use Infrastructure\Service\PostGenerator\PostGeneratorService;
+use DateTime;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 class GenerateRandomPostCommand extends Command
 {
     protected static $defaultName = 'app:generate-random-post';
     protected static $defaultDescription = 'Run app:generate-random-post';
 
-    private EntityManagerInterface $em;
-    private LoremIpsum $loremIpsum;
+    private PostGeneratorService $postGeneratorService;
 
-    public function __construct(EntityManagerInterface $em, LoremIpsum $loremIpsum, string $name = null)
+    public function __construct(string $name = null, PostGeneratorService $postGeneratorService)
     {
         parent::__construct($name);
-        $this->em = $em;
-        $this->loremIpsum = $loremIpsum;
+        $this->postGeneratorService = $postGeneratorService;
     }
 
     protected function configure(): void
@@ -33,18 +28,17 @@ class GenerateRandomPostCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $title = $this->loremIpsum->words(mt_rand(4, 6));
-        $content = $this->loremIpsum->paragraphs(2);
+        try {
+            $this->postGeneratorService->generatePostByDateTime(new DateTime());
+            $output->writeln('A random post has been generated.');
 
-        $post = new Post();
-        $post->setTitle($title);
-        $post->setContent($content);
+            return Command::SUCCESS;
+        } catch (Throwable $e) {
+            // log error
+            $output->writeln('A random post had not been generated. Error: ' . $e->getMessage());
 
-        $this->em->persist($post);
-        $this->em->flush();
-
-        $output->writeln('A random post has been generated.');
-
-        return Command::SUCCESS;
+            return Command::FAILURE;
+        }
     }
+
 }
