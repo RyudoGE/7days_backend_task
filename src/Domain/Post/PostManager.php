@@ -3,30 +3,27 @@
 namespace Domain\Post;
 
 use App\Entity\Post;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\PostRepository;
 
 class PostManager
 {
-    private EntityManagerInterface $em;
+    private PostRepository $repository;
 
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(PostRepository $repository)
     {
-        $this->em = $em;
+        $this->repository = $repository;
     }
 
-    public function addPost($title, $content)
+    public function addPost(?string $title, ?string $content)
     {
         $post = new Post();
         $post->setTitle($title);
         $post->setContent($content);
-        $this->em->persist($post);
-        $this->em->flush();
+        $this->repository->add($post, true);
     }
 
-    public function findPost($id): Post
+    public function findPost(int $id): Post
     {
-        $postRepository = $this->em->getRepository(Post::class);
-
-        return $postRepository->findOneBy(['id' => $id]);
+        return $this->repository->findOneBy(['id' => $id]);
     }
 }
